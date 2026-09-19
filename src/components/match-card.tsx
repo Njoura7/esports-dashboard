@@ -8,10 +8,10 @@ function kda(k: number, d: number, a: number) {
 export function MatchCard({ match }: { match: MatchResponse }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${
         match.win
-          ? "border-emerald-500/20 bg-emerald-500/5"
-          : "border-rose-500/20 bg-rose-500/5"
+          ? "border-emerald-400/15 bg-emerald-500/[0.06]"
+          : "border-rose-400/15 bg-rose-500/[0.06]"
       }`}
     >
       <Image

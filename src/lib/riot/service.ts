@@ -14,6 +14,7 @@ import type {
   RiotMatchDTO,
   RiotSummonerDTO,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 const ACCOUNT_CACHE_TTL_MS = 10 * 60 * 1000; // profile/rank go stale fast, refresh every 10min
 
@@ -67,6 +68,12 @@ export async function getPlayerBundle(
 
   const isFresh =
     cached && Date.now() - cached.fetchedAt.getTime() < ACCOUNT_CACHE_TTL_MS;
+
+  logger.info(isFresh ? "account cache hit" : "account cache miss/stale", {
+    gameName,
+    tagLine,
+    platform,
+  });
 
   const account = isFresh ? cached : await refreshAccount(gameName, tagLine, platform, region);
 
@@ -166,6 +173,13 @@ async function getLastMatches(
   });
   const existingIds = new Set(existing.map((m) => m.matchId));
   const missingIds = matchIds.filter((id) => !existingIds.has(id));
+
+  logger.info("match cache lookup", {
+    puuid,
+    requested: matchIds.length,
+    cached: existingIds.size,
+    fetchingFromRiot: missingIds.length,
+  });
 
   const fetched = await Promise.all(
     missingIds.map((id) =>

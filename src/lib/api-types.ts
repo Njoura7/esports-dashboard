@@ -37,6 +37,9 @@ export interface PlayerApiResponse {
   roast: RoastResult | null;
 }
 
+export type ApiErrorCode = "INVALID_INPUT" | "NOT_FOUND" | "RATE_LIMITED" | "SERVER_ERROR";
+
 export interface ApiErrorResponse {
   error: string;
+  code: ApiErrorCode;
 }
