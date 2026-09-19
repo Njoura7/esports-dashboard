@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db/prisma";
+import { getPrisma } from "@/lib/db/prisma";
 import { riot } from "./client";
 import {
   LAST_N_MATCHES,
@@ -61,6 +61,7 @@ export async function getPlayerBundle(
   platform: Platform,
 ): Promise<PlayerBundle> {
   const region = PLATFORM_TO_REGION[platform];
+  const prisma = getPrisma();
 
   const cached = await prisma.account.findUnique({
     where: { riotIdPerPlatform: { gameName, tagLine, platform } },
@@ -126,7 +127,7 @@ async function refreshAccount(
   );
   const solo = leagueEntries.find((e) => e.queueType === RANKED_SOLO_QUEUE_TYPE);
 
-  return prisma.account.upsert({
+  return getPrisma().account.upsert({
     where: {
       riotIdPerPlatform: {
         gameName: accountDto.gameName,
@@ -168,6 +169,7 @@ async function getLastMatches(
     `/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${LAST_N_MATCHES}`,
   );
 
+  const prisma = getPrisma();
   const existing = await prisma.matchRecord.findMany({
     where: { matchId: { in: matchIds } },
   });
