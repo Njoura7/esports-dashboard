@@ -1,16 +1,41 @@
 # Rift Report
 
-Search a League of Legends Riot ID, see the last 10 games with champion art, and get an
-opinionated comment about them ("you should play more X" / "yeah... never play X again").
+Search a League of Legends Riot ID and get a per-mode breakdown of your last 10 games —
+champion art, KDA, damage, gold, a small trend chart, and an opinionated comment about what
+it all means ("you should play more X" / "yeah... never play X again" / "N losses in a row,
+somebody tell the enemy team").
 
 v1.0.0 scope: League of Legends only.
+
+**Live:** https://esports-dashboard-bice.vercel.app
+
+## Features
+
+- Riot ID search (`gameName#tagLine` + region), Data Dragon champion/profile art
+- Separate **Solo/Duo, Flex, Normal, ARAM** tabs, each with its own last-10-games view,
+  independent chart, and independent roast — a losing streak in ARAM doesn't taint your
+  Solo/Duo comment. Switching tabs is instant (no refetch) once a search has loaded.
+- Per-game **damage dealt** and **gold earned**, plus each game's damage rank within its own
+  10-player lobby (used by the roast engine to call out "bottom of the damage chart" games)
+- A minimal Recharts combo chart per mode: damage bars (colored win/loss) with a gold trend
+  line overlaid
+- Both **Solo/Duo and Flex rank** shown on the profile card
+- Rule-based roast engine (no LLM calls, so it's free and instant) that reads: current
+  win/loss streak, a champion you've gone 0-for-3+ on, a champion carrying your win rate,
+  one-trick detection, repeated bottom-of-lobby damage games, and falls back to a neutral
+  stat summary — see [`src/lib/roast/engine.ts`](src/lib/roast/engine.ts) and
+  [`lines.ts`](src/lib/roast/lines.ts) for the rule bank
+- Sample data (`Njoura#EUW`) auto-loads on first visit so the page isn't empty for a
+  first-time visitor; a small label makes clear it's example data until you search your own
 
 ## Stack
 
 - Next.js App Router (TypeScript), Route Handlers as the Riot API proxy/BFF
 - Postgres via [Neon](https://neon.tech), Prisma 7 (driver adapter: `@prisma/adapter-neon`)
-- TanStack Query (client data fetching/loading state), Framer Motion (animations), Tailwind CSS
-- Data Dragon CDN for champion/profile-icon images (no key required, called straight from the client)
+- TanStack Query (client data fetching/loading state), Framer Motion (animations),
+  Recharts (charts), sonner (toasts), Tailwind CSS
+- Data Dragon CDN for champion/profile-icon images (no key required, called straight from
+  the client)
 
 ## Setup
 
@@ -30,8 +55,12 @@ Vercel's Linux build environment isn't affected; drop the flag there if you want
 ## Data model / caching
 
 Riot match data is immutable once a game ends, so `MatchRecord` rows are a permanent cache —
-a given match is only ever fetched from Riot once, no matter how many times it's viewed.
-`Account` rows (profile + rank) refresh every 10 minutes. See
+a given match is only ever fetched from Riot once, no matter how many times it's viewed or
+how many players in it get searched. `Account` rows (profile + both ranks) refresh every 10
+minutes. Each search fetches one match-ID list per mode from Riot (filtered server-side via
+the `queue` param) in parallel, unions them, and only fetches match detail + writes cache
+rows for IDs genuinely missing — a repeat search of an already-cached player does zero Riot
+calls and responds in well under a second. See
 [`prisma/schema.prisma`](prisma/schema.prisma) and
 [`src/lib/riot/service.ts`](src/lib/riot/service.ts).
 
@@ -47,3 +76,23 @@ applying for a Production key.
 Designed for Vercel: connect the repo, set `RIOT_API_KEY` and `DATABASE_URL` as environment
 variables, deploy. No Docker needed — Neon is already a managed/serverless Postgres and Vercel
 builds Next.js natively.
+
+### Gotchas hit getting this running on Vercel (so you don't have to rediscover them)
+
+- **Prisma 7 dropped automatic `.env` loading from the CLI.** `prisma.config.ts` has to load
+  env files itself (`@next/env`'s `loadEnvConfig`) before reading `DATABASE_URL` — the CLI no
+  longer does this for you like older Prisma versions did.
+- **`prisma generate` needs a `postinstall` hook** or Vercel's `@prisma/client` package stays
+  an empty stub and every import of it fails to typecheck. `"postinstall": "prisma generate"`
+  in `package.json`.
+- **Vercel's "Sensitive" environment variables are withheld from the build step on purpose**
+  (they're only injected at runtime, to reduce what could leak into build logs). Anything that
+  constructs a `PrismaClient` at module-import time will crash `next build`'s page-data
+  collection, even though the var is genuinely configured — construct it lazily instead, on
+  first real request (see [`src/lib/db/prisma.ts`](src/lib/db/prisma.ts)).
+- **When connecting a Storage integration (e.g. Neon) via the Vercel dashboard, leave the
+  "Environment Variable Prefix" field blank.** Typing anything in there (even the name of the
+  variable you think you're setting) prepends that text to every generated variable name —
+  e.g. the real connection string ends up in `DATABASE_URL_DATABASE_URL` instead of
+  `DATABASE_URL`, and a separately/manually-added plain `DATABASE_URL` silently points at
+  nothing.

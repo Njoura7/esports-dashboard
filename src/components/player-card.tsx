@@ -1,6 +1,27 @@
 import Image from "next/image";
 import { PLATFORM_LABELS } from "@/lib/riot/constants";
 import type { PlayerProfileResponse } from "@/lib/api-types";
+import type { RankInfo } from "@/lib/riot/service";
+
+function RankBadge({ label, rank }: { label: string; rank: RankInfo | null }) {
+  return (
+    <div className="text-right">
+      <p className="text-[10px] uppercase tracking-wide text-zinc-500">{label}</p>
+      {rank ? (
+        <>
+          <p className="font-medium text-zinc-100">
+            {rank.tier} {rank.rank}
+          </p>
+          <p className="text-xs text-zinc-400">
+            {rank.leaguePoints} LP · {rank.wins}W {rank.losses}L
+          </p>
+        </>
+      ) : (
+        <p className="text-sm text-zinc-600">Unranked</p>
+      )}
+    </div>
+  );
+}
 
 export function PlayerCard({ profile }: { profile: PlayerProfileResponse }) {
   return (
@@ -22,18 +43,10 @@ export function PlayerCard({ profile }: { profile: PlayerProfileResponse }) {
           Level {profile.summonerLevel} · {PLATFORM_LABELS[profile.platform]}
         </p>
       </div>
-      {profile.rank ? (
-        <div className="text-right">
-          <p className="font-medium text-zinc-100">
-            {profile.rank.tier} {profile.rank.rank}
-          </p>
-          <p className="text-sm text-zinc-400">
-            {profile.rank.leaguePoints} LP · {profile.rank.wins}W {profile.rank.losses}L
-          </p>
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-500">Unranked</p>
-      )}
+      <div className="flex gap-5">
+        <RankBadge label="Solo/Duo" rank={profile.ranks.solo} />
+        <RankBadge label="Flex" rank={profile.ranks.flex} />
+      </div>
     </div>
   );
 }

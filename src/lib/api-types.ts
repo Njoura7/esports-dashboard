@@ -1,5 +1,6 @@
 import type { Platform } from "@/lib/riot/constants";
 import type { RoastResult } from "@/lib/roast/engine";
+import type { RankInfo } from "@/lib/riot/service";
 
 export interface PlayerProfileResponse {
   gameName: string;
@@ -7,13 +8,10 @@ export interface PlayerProfileResponse {
   platform: Platform;
   summonerLevel: number;
   profileIconUrl: string;
-  rank: {
-    tier: string;
-    rank: string;
-    leaguePoints: number;
-    wins: number;
-    losses: number;
-  } | null;
+  ranks: {
+    solo: RankInfo | null;
+    flex: RankInfo | null;
+  };
 }
 
 export interface MatchResponse {
@@ -26,15 +24,24 @@ export interface MatchResponse {
   assists: number;
   cs: number;
   visionScore: number;
+  goldEarned: number;
+  damageDealt: number;
+  damageRank: number;
   gameDurationSeconds: number;
   gameCreation: number;
   role: string;
 }
 
-export interface PlayerApiResponse {
-  profile: PlayerProfileResponse;
+export interface ModeResponse {
+  key: string;
+  label: string;
   matches: MatchResponse[];
   roast: RoastResult | null;
+}
+
+export interface PlayerApiResponse {
+  profile: PlayerProfileResponse;
+  modes: ModeResponse[];
 }
 
 export type ApiErrorCode = "INVALID_INPUT" | "NOT_FOUND" | "RATE_LIMITED" | "SERVER_ERROR";

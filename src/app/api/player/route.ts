@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PLATFORMS } from "@/lib/riot/constants";
+import { MODES, PLATFORMS } from "@/lib/riot/constants";
 import { getPlayerBundle, PlayerNotFoundError } from "@/lib/riot/service";
 import { RiotApiError } from "@/lib/riot/types";
 import { getLatestVersion, championSquareUrl, profileIconUrl } from "@/lib/ddragon/client";
@@ -45,7 +45,18 @@ export async function GET(req: NextRequest) {
       getLatestVersion(),
     ]);
 
-    const roast = buildRoast(bundle.matches);
+    const modes = MODES.map((mode) => {
+      const matches = bundle.modes[mode.key] ?? [];
+      return {
+        key: mode.key,
+        label: mode.label,
+        matches: matches.map((m) => ({
+          ...m,
+          championIconUrl: championSquareUrl(version, m.championName),
+        })),
+        roast: buildRoast(matches),
+      };
+    });
 
     const body: PlayerApiResponse = {
       profile: {
@@ -54,20 +65,15 @@ export async function GET(req: NextRequest) {
         platform: bundle.platform,
         summonerLevel: bundle.summonerLevel,
         profileIconUrl: profileIconUrl(version, bundle.profileIconId),
-        rank: bundle.rank,
+        ranks: bundle.ranks,
       },
-      matches: bundle.matches.map((m) => ({
-        ...m,
-        championIconUrl: championSquareUrl(version, m.championName),
-      })),
-      roast,
+      modes,
     };
 
     logger.info("search completed", {
       riotId,
       platform,
-      matches: bundle.matches.length,
-      roastCategory: roast?.category,
+      modeCounts: Object.fromEntries(modes.map((m) => [m.key, m.matches.length])),
       ms: Date.now() - startedAt,
     });
 

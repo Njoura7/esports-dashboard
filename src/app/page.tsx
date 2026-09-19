@@ -9,8 +9,11 @@ import { LoadingState } from "@/components/loading-state";
 import { PlayerCard } from "@/components/player-card";
 import { MatchList } from "@/components/match-list";
 import { RoastCard } from "@/components/roast-card";
-import { IdleGlow } from "@/components/idle-glow";
+import { ModeTabs } from "@/components/mode-tabs";
+import { ModeStatsChart } from "@/components/mode-stats-chart";
 import type { ApiErrorResponse, PlayerApiResponse } from "@/lib/api-types";
+
+const SAMPLE: SearchValue = { gameName: "Njoura", tagLine: "EUW", platform: "euw1" };
 
 class ApiError extends Error {
   constructor(
@@ -38,13 +41,20 @@ async function fetchPlayer(value: SearchValue): Promise<PlayerApiResponse> {
 }
 
 export default function Home() {
-  const [searched, setSearched] = useState<SearchValue | null>(null);
+  const [searched, setSearched] = useState<SearchValue>(SAMPLE);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [activeMode, setActiveMode] = useState("solo");
 
   const query = useQuery({
     queryKey: ["player", searched],
-    queryFn: () => fetchPlayer(searched!),
-    enabled: searched !== null,
+    queryFn: () => fetchPlayer(searched),
   });
+
+  function handleSearch(value: SearchValue) {
+    setSearched(value);
+    setHasSearched(true);
+    setActiveMode("solo");
+  }
 
   useEffect(() => {
     if (!query.isError) return;
@@ -63,6 +73,8 @@ export default function Home() {
     }
   }, [query.isError, query.error]);
 
+  const activeModeData = query.data?.modes.find((m) => m.key === activeMode) ?? query.data?.modes[0];
+
   return (
     <main className="flex flex-1 flex-col items-center gap-10 px-4 py-16 sm:py-24">
       <motion.div
@@ -77,23 +89,17 @@ export default function Home() {
         <p className="text-sm text-zinc-500">Drop a Riot ID. We&apos;ll pull the receipts.</p>
       </motion.div>
 
-      <SearchForm onSearch={setSearched} isLoading={query.isFetching} />
+      <SearchForm onSearch={handleSearch} isLoading={query.isFetching} />
 
-      <div className="w-full max-w-xl">
+      <div className="w-full max-w-2xl">
         <AnimatePresence mode="wait">
-          {searched === null && (
-            <motion.div key="idle" exit={{ opacity: 0 }}>
-              <IdleGlow />
-            </motion.div>
-          )}
-
           {query.isFetching && (
             <motion.div key="loading" exit={{ opacity: 0 }}>
               <LoadingState />
             </motion.div>
           )}
 
-          {!query.isFetching && query.data && (
+          {!query.isFetching && query.data && activeModeData && (
             <motion.div
               key="results"
               initial={{ opacity: 0, y: 10 }}
@@ -101,9 +107,29 @@ export default function Home() {
               transition={{ duration: 0.3 }}
               className="flex flex-col gap-4"
             >
+              {!hasSearched && (
+                <p className="text-center text-xs text-zinc-600">
+                  Showing example data for {SAMPLE.gameName}#{SAMPLE.tagLine} — search your own Riot ID above.
+                </p>
+              )}
+
               <PlayerCard profile={query.data.profile} />
-              {query.data.roast && <RoastCard roast={query.data.roast} />}
-              <MatchList matches={query.data.matches} />
+              <ModeTabs modes={query.data.modes} active={activeMode} onChange={setActiveMode} />
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeMode}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col gap-4"
+                >
+                  {activeModeData.roast && <RoastCard roast={activeModeData.roast} />}
+                  <ModeStatsChart matches={activeModeData.matches} />
+                  <MatchList matches={activeModeData.matches} />
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>

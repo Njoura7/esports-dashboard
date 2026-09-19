@@ -60,7 +60,24 @@ export const PLATFORM_TO_REGION: Record<Platform, RegionalRoute> = {
   vn2: "sea",
 };
 
-export const RANKED_SOLO_QUEUE_ID = 420;
 export const RANKED_SOLO_QUEUE_TYPE = "RANKED_SOLO_5x5";
+export const RANKED_FLEX_QUEUE_TYPE = "RANKED_FLEX_SR";
 
 export const LAST_N_MATCHES = 10;
+
+export interface ModeDef {
+  key: string;
+  label: string;
+  queueId: number;
+  /** league-v4 queueType this mode's rank badge comes from, if any. */
+  rankQueueType?: string;
+}
+
+// Riot's queue IDs — see https://static.developer.riotgames.com/docs/lol/queues.json.
+// Add more here (e.g. ARURF 900) any time; everything downstream reads this list.
+export const MODES: ModeDef[] = [
+  { key: "solo", label: "Solo/Duo", queueId: 420, rankQueueType: RANKED_SOLO_QUEUE_TYPE },
+  { key: "flex", label: "Flex", queueId: 440, rankQueueType: RANKED_FLEX_QUEUE_TYPE },
+  { key: "normal", label: "Normal", queueId: 400 },
+  { key: "aram", label: "ARAM", queueId: 450 },
+];

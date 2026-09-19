@@ -36,6 +36,8 @@ export interface RiotMatchParticipantDTO {
   neutralMinionsKilled: number;
   visionScore: number;
   teamPosition: string;
+  goldEarned: number;
+  totalDamageDealtToChampions: number;
 }
 
 export interface RiotMatchDTO {

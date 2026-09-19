@@ -21,6 +21,11 @@ model Account {
   soloLeaguePoints Int?
   soloWins      Int?
   soloLosses    Int?
+  flexTier      String?
+  flexRank      String?
+  flexLeaguePoints Int?
+  flexWins      Int?
+  flexLosses    Int?
   fetchedAt     DateTime @updatedAt
 
   playerMatches PlayerMatch[]

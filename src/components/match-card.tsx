@@ -5,6 +5,10 @@ function kda(k: number, d: number, a: number) {
   return d === 0 ? "Perfect" : ((k + a) / d).toFixed(2);
 }
 
+function formatK(n: number) {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
 export function MatchCard({ match }: { match: MatchResponse }) {
   return (
     <div
@@ -33,6 +37,10 @@ export function MatchCard({ match }: { match: MatchResponse }) {
         <p className="text-xs text-zinc-400">
           {kda(match.kills, match.deaths, match.assists)} KDA · {match.cs} CS
         </p>
+      </div>
+      <div className="hidden w-24 text-right sm:block">
+        <p className="text-xs text-zinc-300">{formatK(match.damageDealt)} dmg</p>
+        <p className="text-xs text-amber-400/70">{formatK(match.goldEarned)} gold</p>
       </div>
       <span
         className={`w-14 text-center text-xs font-semibold ${
