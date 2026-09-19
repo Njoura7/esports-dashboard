@@ -5,9 +5,9 @@ champion art, KDA, damage, gold, a small trend chart, and an opinionated comment
 it all means ("you should play more X" / "yeah... never play X again" / "N losses in a row,
 somebody tell the enemy team").
 
-v1.0.0 scope: League of Legends only.
+![Rift Report — Normal queue view with per-mode tabs, damage/gold chart, and roast comment](public/dashboard.png)
 
-**Live:** https://esports-dashboard-bice.vercel.app
+**v1.0.0** — League of Legends only scope. **Live:** https://esports-dashboard-bice.vercel.app
 
 ## Features
 
@@ -67,9 +67,30 @@ calls and responds in well under a second. See
 ## Compliance
 
 Per Riot's Developer Policies, the app displays the required "not endorsed by Riot Games"
-notice in the footer ([`src/components/footer.tsx`](src/components/footer.tsx)). A dev/personal
-key is for prototyping and small private use only — don't run this for public traffic without
-applying for a Production key.
+notice in the footer ([`src/components/footer.tsx`](src/components/footer.tsx)).
+
+**Before sharing the live link publicly, two things Riot's policy requires that aren't a
+code change:**
+
+1. **Register the product** on the [Riot Developer Portal](https://developer.riotgames.com/) —
+   required "if your product serves players, regardless of whether it uses official
+   documented APIs." Personal projects can register without the full verification process.
+2. **Get the right API key for the traffic.** A dev key expires every 24h and is not for
+   public consumption at all (not even an open beta). A **Personal key** (20 req/s, 100
+   req/2min) is meant for personal/small-private-community use, not necessarily for
+   "post the link anywhere" traffic. If this gets real public usage, apply for a
+   **Production key** through the registered product above.
+
+Until a Production key is in place, keep the audience small — the personal-key rate limit is
+shared across every visitor's searches, and Riot can revoke a key that's clearly serving
+public traffic under the wrong tier.
+
+## License
+
+[MIT](LICENSE) for this project's own code. Riot Games' data, assets, and trademarks are not
+covered by that license and remain governed by
+[Riot's Developer Policies](https://developer.riotgames.com/policies/general) — this project
+is not endorsed by or affiliated with Riot Games.
 
 ## Deploy
 
