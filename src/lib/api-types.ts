@@ -32,6 +32,45 @@ export interface MatchResponse {
   role: string;
 }
 
+export interface MatchParticipantResponse {
+  gameName: string;
+  tagLine: string;
+  championName: string;
+  championIconUrl: string;
+  champLevel: number;
+  teamId: number;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  goldEarned: number;
+  damageDealt: number;
+  role: string;
+  itemIconUrls: (string | null)[];
+}
+
+export interface MatchTeamResponse {
+  teamId: number;
+  win: boolean;
+  objectives: {
+    baronKills: number;
+    dragonKills: number;
+    towerKills: number;
+    inhibitorKills: number;
+  };
+}
+
+export interface MatchDetailResponse {
+  matchId: string;
+  gameMode: string;
+  queueId: number;
+  gameDurationSeconds: number;
+  gameCreation: number;
+  teams: MatchTeamResponse[];
+  participants: MatchParticipantResponse[];
+}
+
 export interface ModeResponse {
   key: string;
   label: string;

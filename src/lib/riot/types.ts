@@ -28,6 +28,8 @@ export interface RiotMatchParticipantDTO {
   riotIdGameName?: string;
   riotIdTagline?: string;
   championName: string;
+  champLevel: number;
+  teamId: number;
   win: boolean;
   kills: number;
   deaths: number;
@@ -38,6 +40,28 @@ export interface RiotMatchParticipantDTO {
   teamPosition: string;
   goldEarned: number;
   totalDamageDealtToChampions: number;
+  item0: number;
+  item1: number;
+  item2: number;
+  item3: number;
+  item4: number;
+  item5: number;
+  item6: number;
+}
+
+export interface RiotTeamObjectiveDTO {
+  kills: number;
+}
+
+export interface RiotTeamDTO {
+  teamId: number;
+  win: boolean;
+  objectives: {
+    baron: RiotTeamObjectiveDTO;
+    dragon: RiotTeamObjectiveDTO;
+    tower: RiotTeamObjectiveDTO;
+    inhibitor: RiotTeamObjectiveDTO;
+  };
 }
 
 export interface RiotMatchDTO {
@@ -51,6 +75,7 @@ export interface RiotMatchDTO {
     gameMode: string;
     queueId: number;
     participants: RiotMatchParticipantDTO[];
+    teams: RiotTeamDTO[];
   };
 }
 

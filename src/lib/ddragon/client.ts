@@ -27,6 +27,11 @@ export function profileIconUrl(version: string, profileIconId: number) {
   return `${DDRAGON_CDN}/${version}/img/profileicon/${profileIconId}.png`;
 }
 
+/** itemId 0 means "empty slot" — Riot doesn't serve an image for it, caller should skip. */
+export function itemIconUrl(version: string, itemId: number) {
+  return `${DDRAGON_CDN}/${version}/img/item/${itemId}.png`;
+}
+
 export function rankEmblemUrl(tier: string) {
   const normalized = tier.toLowerCase();
   return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblems/emblem-${normalized}.png`;

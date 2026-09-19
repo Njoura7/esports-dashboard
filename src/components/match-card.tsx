@@ -9,10 +9,11 @@ function formatK(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
-export function MatchCard({ match }: { match: MatchResponse }) {
+export function MatchCard({ match, onClick }: { match: MatchResponse; onClick?: () => void }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left backdrop-blur-xl transition hover:brightness-125 ${
         match.win
           ? "border-emerald-400/15 bg-emerald-500/[0.06]"
           : "border-rose-400/15 bg-rose-500/[0.06]"
@@ -49,6 +50,6 @@ export function MatchCard({ match }: { match: MatchResponse }) {
       >
         {match.win ? "WIN" : "LOSS"}
       </span>
-    </div>
+    </button>
   );
 }

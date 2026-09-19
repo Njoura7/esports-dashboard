@@ -4,7 +4,13 @@ import { motion } from "framer-motion";
 import type { MatchResponse } from "@/lib/api-types";
 import { MatchCard } from "./match-card";
 
-export function MatchList({ matches }: { matches: MatchResponse[] }) {
+export function MatchList({
+  matches,
+  onSelect,
+}: {
+  matches: MatchResponse[];
+  onSelect: (matchId: string) => void;
+}) {
   if (matches.length === 0) {
     return <p className="text-sm text-zinc-500">No recent games found.</p>;
   }
@@ -18,7 +24,7 @@ export function MatchList({ matches }: { matches: MatchResponse[] }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, delay: i * 0.04 }}
         >
-          <MatchCard match={match} />
+          <MatchCard match={match} onClick={() => onSelect(match.matchId)} />
         </motion.div>
       ))}
     </div>

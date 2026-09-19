@@ -11,6 +11,7 @@ import { MatchList } from "@/components/match-list";
 import { RoastCard } from "@/components/roast-card";
 import { ModeTabs } from "@/components/mode-tabs";
 import { ModeStatsChart } from "@/components/mode-stats-chart";
+import { MatchDetailModal } from "@/components/match-detail-modal";
 import type { ApiErrorResponse, PlayerApiResponse } from "@/lib/api-types";
 
 const SAMPLE: SearchValue = { gameName: "Njoura", tagLine: "EUW", platform: "euw1" };
@@ -44,6 +45,7 @@ export default function Home() {
   const [searched, setSearched] = useState<SearchValue>(SAMPLE);
   const [hasSearched, setHasSearched] = useState(false);
   const [activeMode, setActiveMode] = useState("solo");
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["player", searched],
@@ -127,13 +129,19 @@ export default function Home() {
                 >
                   {activeModeData.roast && <RoastCard roast={activeModeData.roast} />}
                   <ModeStatsChart matches={activeModeData.matches} />
-                  <MatchList matches={activeModeData.matches} />
+                  <MatchList matches={activeModeData.matches} onSelect={setSelectedMatchId} />
                 </motion.div>
               </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      <MatchDetailModal
+        matchId={selectedMatchId}
+        highlight={{ gameName: query.data?.profile.gameName ?? "", tagLine: query.data?.profile.tagLine ?? "" }}
+        onClose={() => setSelectedMatchId(null)}
+      />
     </main>
   );
 }
