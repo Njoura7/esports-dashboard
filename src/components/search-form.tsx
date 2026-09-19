@@ -13,15 +13,19 @@ export interface SearchValue {
 export function SearchForm({
   onSearch,
   isLoading,
+  cooldownSeconds = 0,
 }: {
   onSearch: (value: SearchValue) => void;
   isLoading: boolean;
+  /** Seconds left before Riot's rate limit clears — disables the button so re-clicking can't pile on more requests. */
+  cooldownSeconds?: number;
 }) {
   const [riotId, setRiotId] = useState("");
   const [platform, setPlatform] = useState<Platform>("na1");
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (cooldownSeconds > 0) return;
     const [gameName, tagLine] = riotId.split("#").map((s) => s.trim());
     if (!gameName || !tagLine) {
       toast.error("Check that Riot ID", { description: "Format is gameName#tagLine, e.g. Faker#KR1" });
@@ -52,10 +56,10 @@ export function SearchForm({
         </select>
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || cooldownSeconds > 0}
           className="rounded-2xl bg-violet-500 px-6 py-3 font-medium text-white transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading ? "Searching…" : "Search"}
+          {cooldownSeconds > 0 ? `Wait ${cooldownSeconds}s…` : isLoading ? "Searching…" : "Search"}
         </button>
       </div>
     </form>

@@ -20,6 +20,7 @@ class ApiError extends Error {
   constructor(
     message: string,
     public code: ApiErrorResponse["code"],
+    public retryAfterSeconds?: number,
   ) {
     super(message);
   }
@@ -36,9 +37,18 @@ async function fetchPlayer(value: SearchValue): Promise<PlayerApiResponse> {
     const body: ApiErrorResponse = await res
       .json()
       .catch(() => ({ error: "Request failed.", code: "SERVER_ERROR" as const }));
-    throw new ApiError(body.error, body.code);
+    const retryAfter = res.status === 429 ? Number(res.headers.get("Retry-After") ?? "5") : undefined;
+    throw new ApiError(body.error, body.code, retryAfter);
   }
   return res.json();
+}
+
+// Retrying immediately on a 4xx just piles more requests onto an already-rate-limited key
+// (or asks Riot the same "not found" question again) — only worth retrying on our own
+// transient server errors, and even then just once.
+function shouldRetry(_failureCount: number, error: unknown) {
+  if (error instanceof ApiError) return error.code === "SERVER_ERROR";
+  return false;
 }
 
 export default function Home() {
@@ -50,7 +60,36 @@ export default function Home() {
   const query = useQuery({
     queryKey: ["player", searched],
     queryFn: () => fetchPlayer(searched),
+    retry: shouldRetry,
   });
+
+  // Cooldown deadline is derived from React Query's own error state, not a copy of it —
+  // errorUpdatedAt is the moment the 429 landed, so no separate "when did this happen"
+  // bookkeeping is needed.
+  const rateLimitError =
+    query.error instanceof ApiError && query.error.code === "RATE_LIMITED" ? query.error : null;
+  const cooldownDeadline = rateLimitError
+    ? query.errorUpdatedAt + (rateLimitError.retryAfterSeconds ?? 5) * 1000
+    : null;
+
+  // Seed the countdown from the deadline during render (React's documented pattern for
+  // "reset state when a derived value changes" — no Date.now() call and no setState-in-effect
+  // needed for this part), then only ever decrement it inside the interval's own callback.
+  const [prevDeadline, setPrevDeadline] = useState<number | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  if (cooldownDeadline !== prevDeadline) {
+    setPrevDeadline(cooldownDeadline);
+    setCooldownSeconds(
+      cooldownDeadline ? Math.max(0, Math.round((cooldownDeadline - query.errorUpdatedAt) / 1000)) : 0,
+    );
+  }
+
+  const isCountingDown = cooldownSeconds > 0;
+  useEffect(() => {
+    if (!isCountingDown) return;
+    const id = setInterval(() => setCooldownSeconds((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [isCountingDown]);
 
   function handleSearch(value: SearchValue) {
     setSearched(value);
@@ -67,7 +106,10 @@ export default function Home() {
     if (code === "NOT_FOUND") {
       toast.error("No account found", { description: message });
     } else if (code === "RATE_LIMITED") {
-      toast.warning("Slow down a sec", { description: message });
+      const seconds = err instanceof ApiError ? (err.retryAfterSeconds ?? 5) : 5;
+      toast.warning("Riot's rate limit is tapped out", {
+        description: `Try again in ~${seconds}s — search is locked until then so it doesn't dig the hole deeper.`,
+      });
     } else if (code === "INVALID_INPUT") {
       toast.error("Check that Riot ID", { description: message });
     } else {
@@ -91,7 +133,7 @@ export default function Home() {
         <p className="text-sm text-zinc-500">Drop a Riot ID. We&apos;ll pull the receipts.</p>
       </motion.div>
 
-      <SearchForm onSearch={handleSearch} isLoading={query.isFetching} />
+      <SearchForm onSearch={handleSearch} isLoading={query.isFetching} cooldownSeconds={cooldownSeconds} />
 
       <div className="w-full max-w-2xl">
         <AnimatePresence mode="wait">
