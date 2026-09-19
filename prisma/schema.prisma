@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7: no `url` here. Migrate reads the connection from prisma.config.ts,
+// and PrismaClient at runtime is wired to Neon via the driver adapter in src/lib/db/prisma.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// A resolved Riot account, cached so repeat searches skip account-v1 + summoner-v4 + league-v4.
+model Account {
+  puuid         String   @id
+  gameName      String
+  tagLine       String
+  platform      String // platform routing value at last fetch, e.g. "euw1"
+  profileIconId Int
+  summonerLevel Int
+  soloTier      String?
+  soloRank      String?
+  soloLeaguePoints Int?
+  soloWins      Int?
+  soloLosses    Int?
+  fetchedAt     DateTime @updatedAt
+
+  playerMatches PlayerMatch[]
+
+  @@unique([gameName, tagLine, platform], name: "riotIdPerPlatform")
+  @@index([gameName, tagLine])
+}
+
+// A single match's full Riot payload. Immutable once the game is finished, so this is a
+// permanent cache: once we have a matchId we never re-fetch it from Riot.
+model MatchRecord {
+  matchId      String   @id
+  region       String // regional routing value used to fetch it, e.g. "europe"
+  gameCreation BigInt
+  raw          Json
+  fetchedAt    DateTime @default(now())
+
+  playerMatches PlayerMatch[]
+}
+
+// Join table: which matches belong to which account, in recency order.
+model PlayerMatch {
+  puuid   String
+  matchId String
+  playedAt DateTime
+
+  account Account     @relation(fields: [puuid], references: [puuid], onDelete: Cascade)
+  match   MatchRecord @relation(fields: [matchId], references: [matchId], onDelete: Cascade)
+
+  @@id([puuid, matchId])
+  @@index([puuid, playedAt])
+}
